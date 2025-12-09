@@ -157,7 +157,7 @@ case state
 
 #define C_ROUTINE_YIELD                                                                             \
 (*c_routine_state)++;                                                                               \
-break
+return
 
 
 /** Similar to C_ROUTINE_YIELD, but will not increment state until cond is met
@@ -166,11 +166,9 @@ break
  * @example C_ROUTINE_YIELD_UNTIL(C_ROUTINE_ARG(x) == 0);
 **/
 #define C_ROUTINE_YIELD_UNTIL(cond)                                                                 \
-if (cond) {                                                                                         \
-    (*c_routine_state)++;                                                                           \
-    break;                                                                                          \
-}                                                                                                   \
-break;
+if (!(cond)) return;                                                                                  \
+(*c_routine_state)++;                                                                               \
+return;
 
 
 #define C_ROUTINE_END                                                                               \
