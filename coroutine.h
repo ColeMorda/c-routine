@@ -65,7 +65,7 @@
 
 #include <limits.h>
 
-// C_Routines may not have more than 18446744073709551614 (64 bits - 2) states including init, last number is reserved for exit state
+// C_Routines may not have more than (64 bits - 2) states including init, last number is reserved for exit state
 typedef unsigned long long C_RoutineState;
 
 #define RESERVED_C_ROUTINE_EXIT_STATE (ULLONG_MAX - 1)
@@ -82,6 +82,14 @@ void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine_args) 
     switch(*c_routine_state)
 
 
+/** For use in header files.
+ * @example C_ROUTINE_DEF_EXTERN(ExpensiveOperation, int x; int y);
+**/
+#define C_ROUTINE_DEF_EXTERN(id, args)                                                              \
+typedef struct {args;} CRO_##id##_ARGS;                                                             \
+extern void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine_args)
+
+
 /** Define a c_routine function without arguments.
  * NOTE: If function needs args or persistent state, use C_ROUTINE_DEF.
  * @param id Symbol definition for the function
@@ -92,6 +100,13 @@ void CRO_##id(C_RoutineState* c_routine_state) {                                
     switch(*c_routine_state)
 
 
+/** For use in header files.
+ * @example C_ROUTINE_DEF_NOARGS_EXTERN(ExpensiveOperation);
+**/
+#define C_ROUTINE_DEF_NOARGS_EXTERN(id)                                                             \
+extern void CRO_##id(C_RoutineState* c_routine_state)
+
+
 /** Initialize the c_routine state for later use.
  * @param id Symbol definition for the function
  * @example C_RoutineState state = C_ROUTINE_INIT(ExpensiveOperation, 0, 10);
@@ -99,6 +114,7 @@ void CRO_##id(C_RoutineState* c_routine_state) {                                
 #define C_ROUTINE_INIT(id, ...)                                                                     \
 0;                                                                                                  \
 CRO_##id##_ARGS c_routine_args##_##id = {__VA_ARGS__}
+
 
 /** Resume a c_routine.
  * @param id Symbol definition for the function
@@ -117,12 +133,14 @@ if (state < RESERVED_C_ROUTINE_EXIT_STATE) {                                    
 #define C_ROUTINE_ON_END                                                                            \
 else
 
+
 /** Set the c_routine as completed and abort execution
  * @example if (C_ROUTINE_ARG(x) == 0) {C_ROUTINE_EXIT;}
 **/
 #define C_ROUTINE_EXIT                                                                              \
 *c_routine_state = RESERVED_C_ROUTINE_EXIT_STATE;                                                   \
 break
+
 
 /** Get an argument from the c_routine argument struct.
  * @example C_ROUTINE_ARG(x) = 0;
