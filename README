@@ -7,6 +7,10 @@
  * C_ROUTINE © 2025 by Cole Morda is licensed under Creative Commons Attribution 4.0 International.
  * To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/
  ****************************************************************************************************************
+ * Are you using C_ROUTINE in your project? Let me know, and I'll add your project to this
+ * (currently empty) list!
+ * 
+ ****************************************************************************************************************
  * FAQ:
  *      Q: What is this?
  *      A: This is a lightweight, header-only coroutine system for C.
