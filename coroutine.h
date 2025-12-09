@@ -108,6 +108,7 @@ extern void CRO_##id(C_RoutineState* c_routine_state)
 
 
 /** Initialize the c_routine state for later use.
+ * NOTE: If function doesnt need args or persistent state, use C_ROUTINE_INIT_NOARGS.
  * @param id Symbol definition for the function
  * @example C_RoutineState state = C_ROUTINE_INIT(ExpensiveOperation, 0, 10);
 **/
@@ -116,7 +117,16 @@ extern void CRO_##id(C_RoutineState* c_routine_state)
 CRO_##id##_ARGS c_routine_args##_##id = {__VA_ARGS__}
 
 
+/** Initialize the c_routine state for later use without arguments.
+ * NOTE: If function needs args or persistent state, use C_ROUTINE_INIT.
+ * @param id Symbol definition for the function
+ * @example C_RoutineState state = C_ROUTINE_INIT_NOARGS(ExpensiveOperation);
+**/
+#define C_ROUTINE_INIT_NOARGS(id)                                                                   \
+0
+
 /** Resume a c_routine.
+ * NOTE: If function doesnt need args or persistent state, use C_ROUTINE_RUN_NOARGS.
  * @param id Symbol definition for the function
  * @param state Saved state (from C_ROUTINE_INIT)
  * @example C_ROUTINE_RUN(ExpensiveFunction, state);
@@ -124,6 +134,18 @@ CRO_##id##_ARGS c_routine_args##_##id = {__VA_ARGS__}
 #define C_ROUTINE_RUN(id, state)                                                                    \
 if (state < RESERVED_C_ROUTINE_EXIT_STATE) {                                                        \
     CRO_##id(&state, &c_routine_args##_##id);                                                       \
+}
+
+
+/** Resume a c_routine without arguments.
+ * NOTE: If function needs args or persistent state, use C_ROUTINE_RUN_NOARGS.
+ * @param id Symbol definition for the function
+ * @param state Saved state (from C_ROUTINE_INIT)
+ * @example C_ROUTINE_RUN(ExpensiveFunction, state);
+**/
+#define C_ROUTINE_RUN_NOARGS(id, state)                                                             \
+if (state < RESERVED_C_ROUTINE_EXIT_STATE) {                                                        \
+    CRO_##id(&state);                                                                               \
 }
 
 
@@ -139,7 +161,7 @@ else
 **/
 #define C_ROUTINE_EXIT                                                                              \
 *c_routine_state = RESERVED_C_ROUTINE_EXIT_STATE;                                                   \
-break
+return
 
 
 /** Get an argument from the c_routine argument struct.
@@ -166,7 +188,7 @@ return
  * @example C_ROUTINE_YIELD_UNTIL(C_ROUTINE_ARG(x) == 0);
 **/
 #define C_ROUTINE_YIELD_UNTIL(cond)                                                                 \
-if (!(cond)) return;                                                                                  \
+if (!(cond)) return;                                                                                \
 (*c_routine_state)++;                                                                               \
 return;
 
