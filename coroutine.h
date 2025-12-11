@@ -36,13 +36,15 @@
  *          C_RoutineState
  *          RESERVED_C_ROUTINE_EXIT_STATE
  *          C_ROUTINE_DEF
+ *          C_ROUTINE_DEF_EXTERN
  *          C_ROUTINE_DEF_NOARGS
+ *          C_ROUTINE_DEF_NOARGS_EXTERN
  *          C_ROUTINE_INIT
  *          C_ROUTINE_RUN
+ *          C_ROUTINE_RUN_NOARGS
  *          C_ROUTINE_ON_END
  *          C_ROUTINE_EXIT
  *          C_ROUTINE_ARG
- *          C_ROUTINE_STATE
  *          C_ROUTINE_YIELD
  *          C_ROUTINE_YIELD_UNTIL
  *          C_ROUTINE_END
@@ -63,6 +65,26 @@
 #ifndef C_ROUTINE_H
 #define C_ROUTINE_H
 
+// These shorthand macros may conflict with other modules,
+// so they are disabled by default unless -DC_ROUTINE_UNSAFE_SHORTHANDS is passed to compiler.
+#ifdef C_ROUTINE_UNSAFE_SHORTHANDS
+    #define CRState C_RoutineState
+    #define CR_DEF C_ROUTINE_DEF
+    #define CR_DEF_EX C_ROUTINE_DEF_EXTERN
+    #define CR_DEF_NA C_ROUTINE_DEF_NOARGS
+    #define CR_DEF_NA_EX C_ROUTINE_DEF_NOARGS_EXTERN
+    #define CR_INIT C_ROUTINE_INIT
+    #define CR_INIT_NA C_ROUTINE_INIT_NOARGS
+    #define CR_RUN C_ROUTINE_RUN
+    #define CR_RUN_NA C_ROUTINE_RUN_NOARGS
+    #define ONEND C_ROUTINE_ON_END
+    #define CR_EXIT C_ROUTINE_EXIT
+    #define CR_ARG C_ROUTINE_ARG
+    #define YIELD C_ROUTINE_YIELD
+    #define YIELD_UNTIL C_ROUTINE_YIELD_UNTIL
+    #define CR_END C_ROUTINE_END
+#endif
+
 #include <limits.h>
 
 // C_Routines may not have more than (64 bits - 2) states including init, last number is reserved for exit state
@@ -79,7 +101,8 @@ typedef unsigned long long C_RoutineState;
 #define C_ROUTINE_DEF(id, args)                                                                     \
 typedef struct {args;} CRO_##id##_ARGS;                                                             \
 void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine_args) {                   \
-    switch(*c_routine_state)
+    switch(*c_routine_state) {                                                                      \
+        C_ROUTINE_STATE(0):
 
 
 /** For use in header files.
@@ -97,7 +120,8 @@ extern void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine
 **/
 #define C_ROUTINE_DEF_NOARGS(id)                                                                    \
 void CRO_##id(C_RoutineState* c_routine_state) {                                                    \
-    switch(*c_routine_state)
+    switch(*c_routine_state) {                                                                      \
+        C_ROUTINE_STATE(0):
 
 
 /** For use in header files.
@@ -177,9 +201,10 @@ return
 case state
 
 
-#define C_ROUTINE_YIELD                                                                             \
-(*c_routine_state)++;                                                                               \
-return
+#define C_ROUTINE_YIELD(state)                                                                      \
+    (*c_routine_state)++;                                                                           \
+    return;                                                                                         \
+case (state+1):
 
 
 /** Similar to C_ROUTINE_YIELD, but will not increment state until cond is met
@@ -187,15 +212,17 @@ return
  * NOTE: All code in the current state up to this macro will still be ran regardless of if cond is met!
  * @example C_ROUTINE_YIELD_UNTIL(C_ROUTINE_ARG(x) == 0);
 **/
-#define C_ROUTINE_YIELD_UNTIL(cond)                                                                 \
-if (!(cond)) return;                                                                                \
-(*c_routine_state)++;                                                                               \
-return;
+#define C_ROUTINE_YIELD_UNTIL(state, cond)                                                          \
+    if (!(cond)) return;                                                                            \
+    (*c_routine_state)++;                                                                           \
+    return;                                                                                         \
+case (state+1):
 
 
 #define C_ROUTINE_END                                                                               \
-default:                                                                                            \
-    C_ROUTINE_EXIT;                                                                                 \
+    default:                                                                                        \
+        C_ROUTINE_EXIT;                                                                             \
+    }                                                                                               \
 }
 
 #endif
