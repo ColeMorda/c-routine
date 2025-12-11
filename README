@@ -7,10 +7,6 @@
  * C_ROUTINE © 2025 by Cole Morda is licensed under Creative Commons Attribution 4.0 International.
  * To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/
  ****************************************************************************************************************
- * Are you using C_ROUTINE in your project? Let me know, and I'll add your project to this
- * (currently empty) list!
- * 
- ****************************************************************************************************************
  * FAQ:
  *      Q: What is this?
  *      A: This is a lightweight, header-only coroutine system for C.
@@ -34,24 +30,32 @@
  *         - Think happy thoughts. "I love manual memory management", "Abstraction is evil", etc.
  *         - Use Lua for your project instead. If it's good enough for Cloudflare, it's good enough for you.
  ****************************************************************************************************************
+ * FLAGS:
+ *      -DC_ROUTINE_UNSAFE_SHORTHANDS: Allows use of potentially conflicting shorthand macros such as ONEND.
+ *      -DC_ROUTINE_MANUAL_STATE: Disables the automatic state handler, This means you must explicitly define each state in C_ROUTINE_YIELD, (e.g. C_ROUTINE_YIELD(0))
+ ****************************************************************************************************************
  * WARNINGS:
  *      C_ROUTINE reserves the following keywords:
  *          C_ROUTINE_H
  *          C_RoutineState
  *          RESERVED_C_ROUTINE_EXIT_STATE
  *          C_ROUTINE_DEF
+ *          C_ROUTINE_DEF_EXTERN
  *          C_ROUTINE_DEF_NOARGS
+ *          C_ROUTINE_DEF_NOARGS_EXTERN
  *          C_ROUTINE_INIT
  *          C_ROUTINE_RUN
+ *          C_ROUTINE_RUN_NOARGS
  *          C_ROUTINE_ON_END
  *          C_ROUTINE_EXIT
  *          C_ROUTINE_ARG
- *          C_ROUTINE_STATE
  *          C_ROUTINE_YIELD
  *          C_ROUTINE_YIELD_UNTIL
  *          C_ROUTINE_END
  *          c_routine_state
  *          c_routine_args
+ *          C_ROUTINE_UNSAFE_SHORTHANDS
+ *          C_ROUTINE_MANUAL_STATE
  *      As well as the following formats:
  *          CRO_*
  *          CRO_*_ARGS
@@ -62,4 +66,5 @@
  ****************************************************************************************************************
  * CHANGELOG:
  *      12.09.2025: Initial completion.
+ *      12.10.2025: Automatic state management.
 *****************************************************************************************************************/
