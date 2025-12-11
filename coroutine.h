@@ -30,6 +30,10 @@
  *         - Think happy thoughts. "I love manual memory management", "Abstraction is evil", etc.
  *         - Use Lua for your project instead. If it's good enough for Cloudflare, it's good enough for you.
  ****************************************************************************************************************
+ * FLAGS:
+ *      -DC_ROUTINE_UNSAFE_SHORTHANDS: Allows use of potentially conflicting shorthand macros such as ONEND.
+ *      -DC_ROUTINE_MANUAL_STATE: Disables the automatic state handler, This means you must explicitly define each state in C_ROUTINE_YIELD, (e.g. C_ROUTINE_YIELD(0))
+ ****************************************************************************************************************
  * WARNINGS:
  *      C_ROUTINE reserves the following keywords:
  *          C_ROUTINE_H
@@ -50,6 +54,8 @@
  *          C_ROUTINE_END
  *          c_routine_state
  *          c_routine_args
+ *          C_ROUTINE_UNSAFE_SHORTHANDS
+ *          C_ROUTINE_MANUAL_STATE
  *      As well as the following formats:
  *          CRO_*
  *          CRO_*_ARGS
@@ -64,6 +70,8 @@
 
 #ifndef C_ROUTINE_H
 #define C_ROUTINE_H
+
+#include <limits.h>
 
 // These shorthand macros may conflict with other modules,
 // so they are disabled by default unless -DC_ROUTINE_UNSAFE_SHORTHANDS is passed to compiler.
@@ -85,9 +93,7 @@
     #define CR_END C_ROUTINE_END
 #endif
 
-#include <limits.h>
-
-// C_Routines may not have more than (64 bits - 2) states including init, last number is reserved for exit state
+// C_Routines must not be written in any line after (64 bits - 2), because the system currently uses __LINE__ for automatic state management.
 typedef unsigned long long C_RoutineState;
 
 #define RESERVED_C_ROUTINE_EXIT_STATE (ULLONG_MAX - 1)
@@ -102,7 +108,7 @@ typedef unsigned long long C_RoutineState;
 typedef struct {args;} CRO_##id##_ARGS;                                                             \
 void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine_args) {                   \
     switch(*c_routine_state) {                                                                      \
-        C_ROUTINE_STATE(0):
+        case 0:
 
 
 /** For use in header files.
@@ -121,7 +127,7 @@ extern void CRO_##id(C_RoutineState* c_routine_state, CRO_##id##_ARGS* c_routine
 #define C_ROUTINE_DEF_NOARGS(id)                                                                    \
 void CRO_##id(C_RoutineState* c_routine_state) {                                                    \
     switch(*c_routine_state) {                                                                      \
-        C_ROUTINE_STATE(0):
+        case 0:
 
 
 /** For use in header files.
@@ -197,14 +203,26 @@ return
 
 // These next couple macros make it painfully obvious that c_routines are just switch statements.
 // Regardless, we don't want people mixing macros and raw switch syntax. Ugly.
-#define C_ROUTINE_STATE(state)                                                                      \
-case state
+#ifdef C_ROUTINE_MANUAL_STATE
+    #define C_ROUTINE_INCREMENT_STATE                                                               \
+        (*c_routine_state)++;
+#else
+    #define C_ROUTINE_INCREMENT_STATE                                                               \
+        *c_routine_state = __LINE__;
+#endif
 
 
-#define C_ROUTINE_YIELD(state)                                                                      \
-    (*c_routine_state)++;                                                                           \
-    return;                                                                                         \
-case (state+1):
+#ifdef C_ROUTINE_MANUAL_STATE
+    #define C_ROUTINE_YIELD(state)                                                                  \
+        C_ROUTINE_INCREMENT_STATE                                                                   \
+        return;                                                                                     \
+    case (state + 1):
+#else
+    #define C_ROUTINE_YIELD                                                                         \
+        C_ROUTINE_INCREMENT_STATE                                                                   \
+        return;                                                                                     \
+    case __LINE__:
+#endif
 
 
 /** Similar to C_ROUTINE_YIELD, but will not increment state until cond is met
@@ -212,11 +230,19 @@ case (state+1):
  * NOTE: All code in the current state up to this macro will still be ran regardless of if cond is met!
  * @example C_ROUTINE_YIELD_UNTIL(C_ROUTINE_ARG(x) == 0);
 **/
-#define C_ROUTINE_YIELD_UNTIL(state, cond)                                                          \
-    if (!(cond)) return;                                                                            \
-    (*c_routine_state)++;                                                                           \
-    return;                                                                                         \
-case (state+1):
+#ifdef C_ROUTINE_MANUAL_STATE
+    #define C_ROUTINE_YIELD_UNTIL(state, cond)                                                      \
+        if (!(cond)) return;                                                                        \
+        C_ROUTINE_INCREMENT_STATE                                                                   \
+        return;                                                                                     \
+    case (state + 1):
+#else
+    #define C_ROUTINE_YIELD_UNTIL(cond)                                                             \
+        if (!(cond)) return;                                                                        \
+        C_ROUTINE_INCREMENT_STATE                                                                   \
+        return;                                                                                     \
+    case __LINE__:
+#endif
 
 
 #define C_ROUTINE_END                                                                               \
